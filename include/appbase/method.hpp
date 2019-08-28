@@ -154,6 +154,7 @@ namespace appbase {
              */
             Ret operator()(Args&&... args)
             {
+               //触发调用
                return _signal(std::forward<Args>(args)...);
             }
 
@@ -243,6 +244,7 @@ namespace appbase {
          };
 
          /**
+          * provider 供应商、提供者
           * Register a provider of this method
           *
           * @tparam T - the type of the provider (functor, lambda)

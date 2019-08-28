@@ -9,7 +9,8 @@
 #include <boost/exception/diagnostic_information.hpp>
 
 namespace appbase {
-
+   // std::unique_ptr<void>可以存放任意类型的指针(类似void*)
+   // 实际上是一个channel*的wrapper，由application::channels进行统一管理。
    using erased_channel_ptr = std::unique_ptr<void, void(*)(void*)>;
 
    /**
@@ -41,7 +42,11 @@ namespace appbase {
     *
     * Data passed to a channel is *copied*, consider using a shared_ptr if the use-case allows it
     *
+    * 用法：
+    *   1. 创建一个channel
+    *   2.
     * @tparam Data - the type of data to publish
+    *
     */
    template<typename Data, typename DispatchPolicy>
    class channel final {
@@ -51,6 +56,9 @@ namespace appbase {
           * for ownership via RAII and also explicit unsubscribe actions
           */
          class handle {
+            //一个handle封装signal::connection, signal::connection中封装一个注册的函数
+            //一个channel封装一个signal，一个signal上可以注册多个回调函数
+            //所以：一个channel 上可以有多个handle
             public:
                ~handle() {
                   unsubscribe();
@@ -61,6 +69,7 @@ namespace appbase {
                 * of this object expires
                 */
                void unsubscribe() {
+
                   if (_handle.connected()) {
                      _handle.disconnect();
                   }
@@ -107,6 +116,8 @@ namespace appbase {
           */
          template<typename Callback>
          handle subscribe(Callback cb) {
+             // _signal.connect 用于将注册监听signal的函数，返回signal::connection
+             // 通过signal::connection::connected()的返回值来判断注册的函数是否被调用
             return handle(_signal.connect(cb));
          }
 
@@ -168,6 +179,7 @@ namespace appbase {
             return erased_channel_ptr(new channel(), &deleter);
          }
 
+         //boost::signals2::signal模板有两个参数，第一个是注册到这个信号上的函数的类型
          boost::signals2::signal<void(const Data&), DispatchPolicy> _signal;
 
          friend class appbase::application;
@@ -176,6 +188,7 @@ namespace appbase {
    /**
     *
     * @tparam Tag - API specific discriminator used to distinguish between otherwise identical data types
+    * Tag参数实际上并不是真正需要定义的struct,仅仅是拿来当作一个标识使用的
     * @tparam Data - the typ of the Data the channel carries
     * @tparam DispatchPolicy - The dispatch policy to use for this channel (defaults to @ref drop_exceptions)
     */

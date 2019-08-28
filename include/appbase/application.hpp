@@ -173,6 +173,8 @@ namespace appbase {
           * @tparam ChannelDecl - @ref appbase::channel_decl
           * @return reference to the channel described by the declaration
           */
+         // get_channel 依据模板函数参数ChannelDecl进行查找channel，没有的话则生成一个新的channel
+         // 整体来说channel是由application进行管理和维护的
          template<typename ChannelDecl>
          auto get_channel() -> std::enable_if_t<is_channel_decl<ChannelDecl>::value, typename ChannelDecl::channel_type&>
          {
@@ -202,6 +204,7 @@ namespace appbase {
           */
          template <typename Func>
          auto post( int priority, Func&& func ) {
+            //按优先级打包Func到io_service中去运行
             return boost::asio::post(*io_serv, pri_queue.wrap(priority, std::forward<Func>(func)));
          }
 
